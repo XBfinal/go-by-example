@@ -1,12 +1,15 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	"strings"
 )
 
 type DictRequest struct {
@@ -50,13 +53,26 @@ type DictResponse struct {
 
 func main() {
 	client := &http.Client{}
-	request := DictRequest{TransType: "en2zh", Source: "good"}
+	request := DictRequest{TransType: "en2zh", Source: "pig"}
+
+	fmt.Println("请输入你要翻译的单词")
+	reader := bufio.NewReader(os.Stdin)
+	readString, err1 := reader.ReadString('\r')
+	readString = strings.TrimSuffix(readString, "\r")
+
+	if err1 != nil {
+		fmt.Println("当前错误：", err1)
+
+	}
+
+	request.Source = readString
 	buf, err := json.Marshal(request)
 	if err != nil {
 		log.Fatal(err)
 	}
 	var data = bytes.NewReader(buf)
-	req, err := http.NewRequest("POST", "https://api.interpreter.caiyunai.com/v1/dict", data)
+	req, err := http.NewRequest("POST",
+		"https://api.interpreter.caiyunai.com/v1/dict", data)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -92,5 +108,14 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("%#v\n", dictResponse)
+
+	explanations := dictResponse.Dictionary.Explanations
+	fmt.Println("=================")
+
+	fmt.Println("你输入的内容是:" + request.Source)
+	fmt.Println("以下是翻译结果：")
+	for _, value := range explanations {
+		fmt.Println(value)
+	}
+
 }
